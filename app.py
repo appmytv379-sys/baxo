@@ -10,7 +10,7 @@ CONFIG = {
     'base_domain': 'https://themoviebox.xyz',
     'jwt_token': '', # Auto-fetched via script
     
-    'output_file': os.path.join(os.path.dirname(os.path.abspath(__file__)), 'b_dub.json'),
+    'output_file': os.path.join(os.path.dirname(os.path.abspath(__file__)), 'b_dab.json'),
     'start_page': 1,
     'per_page': 24,       
     'delay_ms': 800,      
@@ -51,7 +51,8 @@ def get_stealth_headers(token="", base_domain=""):
     return headers
 
 def fetch_initial_token_and_cookie():
-    url = f"{CONFIG['base_domain']}/"
+    # সরাসরি মুভি ফিল্টার পেজে হিট করলে টোকেন পাওয়ার সম্ভাবনা ১০০%
+    url = f"{CONFIG['base_domain']}/web/film?type=/home/movieFilter"
     headers = get_stealth_headers(base_domain=CONFIG['base_domain'])
     
     try:
@@ -299,6 +300,7 @@ if __name__ == "__main__":
         print(f"\n[PAGE {page}] Fetching data... ", flush=True)
         
         payload = {
+            'channelId': 1, # Added channelId as requested by API
             'tabId': CONFIG['filter']['tabId'],
             'classify': CONFIG['filter']['classify'],
             'country': CONFIG['filter']['country'],
@@ -315,7 +317,17 @@ if __name__ == "__main__":
             print("[STOP] API Connection issue.", flush=True)
             break
 
-        items = response.get('data', {}).get('list') or response.get('data', {}).get('items') or response.get('data', [])
+        # Safe extraction of items to avoid 'str' object has no attribute 'get'
+        raw_data = response.get('data', {})
+        items = []
+        if isinstance(raw_data, dict):
+            items = raw_data.get('list') or raw_data.get('items') or raw_data.get('subjects') or []
+        elif isinstance(raw_data, list):
+            items = raw_data
+            
+        if not isinstance(items, list):
+            items = []
+
         count = len(items)
         print(f" -> Found: {count} items.", flush=True)
 
@@ -326,6 +338,9 @@ if __name__ == "__main__":
         processed_this_page = 0
 
         for movie in items:
+            if not isinstance(movie, dict):
+                continue # Skip if the item is not a dictionary
+                
             mid = str(movie.get('subjectId') or movie.get('id') or '')
             title = movie.get('title') or movie.get('name') or 'Unknown'
             detail_path = movie.get('detailPath', '')
