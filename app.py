@@ -12,7 +12,7 @@ CONFIG = {
     
     'output_file': os.path.join(os.path.dirname(os.path.abspath(__file__)), 'b_dab.json'),
     'start_page': 1,
-    'per_page': 24,       
+    'per_page': 28,       
     'delay_ms': 800,      
     
     'cooldown_every_pages': 10,
